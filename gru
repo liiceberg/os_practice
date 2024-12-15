@@ -1,0 +1,49 @@
+#! /usr/bin/python3
+
+import os
+import sys
+import random
+
+child_pids = []
+pid = os.getpid()
+
+def create_child_process():
+  child_pid = os.fork() 
+  if child_pid == 0:
+    random_time = random.randint(5, 10)
+    minion_program = './minion'
+    os.execve(minion_program, [minion_program, str(random_time)], os.environ)
+  else:
+    child_pids.append(child_pid)
+    print(f"Gru[{pid}]: process created. PID {child_pid}.", flush=True)
+
+
+if len(sys.argv) != 2:
+  print(f"{sys.argv[0]}: must be argument <N>", file=sys.stderr)
+  sys.exit(1)
+
+N = int(sys.argv[1])
+
+if N <= 0:
+  print("Gru: N must be a positive integer.", file=sys.stderr)
+  sys.exit(1)
+
+for _ in range(N):  
+  create_child_process()
+
+while child_pids:
+  try:
+    terminated_pid, status = os.wait()
+  except ChildProcessError:
+    break  
+
+  exit_status = os.WEXITSTATUS(status)
+
+  print(f"Gru[{pid}]: process terminated. PID {terminated_pid}. Exit status {exit_status}.", flush = True)
+
+  if exit_status != 0:
+    create_child_process()
+  else:
+    child_pids.remove(terminated_pid)
+
+os._exit(0)
