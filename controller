@@ -1,0 +1,84 @@
+#! /usr/bin/python3
+
+import os
+import signal
+import random
+import sys
+
+lines_processed = 0
+
+def print_sigusr1(signum, frame): 
+    print(f"Processed {lines_processed} lines", file=sys.stderr)
+
+signal.signal(signal.SIGUSR1, print_sigusr1)
+
+pipe_a_r, pipe_a_w = os.pipe()
+pipe_b_r, pipe_b_w = os.pipe()
+pipe_c_r, pipe_c_w = os.pipe()
+
+pid_1 = os.fork()
+if pid_1 == 0:
+    os.dup2(pipe_a_w, sys.stdout.fileno())
+    os.close(pipe_a_r)
+    os.close(pipe_a_w)
+    os.close(pipe_b_r)  
+    os.close(pipe_b_w)
+    os.close(pipe_c_r)
+    os.close(pipe_c_w)
+
+    generator_program = "./generator"
+    n = random.randint(120, 180)
+    os.execve(generator_program, [generator_program, str(n)], os.environ)
+    os._exit(1)
+
+
+pid_2 = os.fork()
+if pid_2 == 0:
+    os.dup2(pipe_b_r, sys.stdin.fileno())
+    os.dup2(pipe_c_w, sys.stdout.fileno())
+    os.close(pipe_b_r)
+    os.close(pipe_b_w)
+    os.close(pipe_c_r)
+    os.close(pipe_c_w)
+    os.close(pipe_a_r)
+    os.close(pipe_a_w)
+
+    bc_program = "/usr/bin/bc"
+    os.execvp(bc_program, [bc_program])
+    os._exit(1)
+
+os.close(pipe_a_w)
+os.close(pipe_b_r)
+os.close(pipe_c_w)
+
+try:
+    with os.fdopen(pipe_a_r, 'r') as pipe_a_reader, os.fdopen(pipe_b_w, 'w') as pipe_b_writer, os.fdopen(pipe_c_r, 'r') as pipe_c_reader:
+
+        for line in pipe_a_reader:
+            
+            lines_processed += 1
+
+            pipe_b_writer.write(line)
+            pipe_b_writer.flush()
+
+            res = pipe_c_reader.readline()
+            if not res:
+                print("Не удалось получить результат от bc", file=sys.stderr)
+                break
+
+            print(f"{line.strip()} = {res.strip()}")
+
+except BrokenPipeError:
+    print("./controller: пайп разорван", file=sys.stderr)
+    os._exit(1)
+
+except Exception as e:
+    print(e, file=sys.stderr)
+    os._exit(1)
+
+
+os.waitpid(pid_1, 0)
+os.waitpid(pid_2, 0)
+
+sys.exit(0)
+

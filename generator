@@ -1,0 +1,37 @@
+#! /usr/bin/python3
+
+import os
+import sys
+import random
+import time
+
+if len(sys.argv) != 2:
+    print("Количество аршументов должно равняться двум", file=sys.stderr)
+    os._exit(1)
+
+try:
+    N = int(sys.argv[1])
+    if N < 120 or N > 180:
+        print("N должно принимать значения между 120 и 180", file=sys.stderr)
+        os._exit(1)
+        
+except ValueError:
+    print("N должно быть целым числом", file=sys.stderr)
+    os._exit(1)
+
+def generate_expression():
+    x = random.randint(1, 9)
+    y = random.randint(1, 9)
+    o = random.choice(['+', '-', '*', '/'])
+    return f"{x} {o} {y}"
+
+try:
+    for i in range(N):
+        print(generate_expression(), flush=True)
+        time.sleep(1)
+except BrokenPipeError:
+    print("./generator: пайп разорван", file=sys.stderr)
+    os._exit(1)
+
+os._exit(0)
+
