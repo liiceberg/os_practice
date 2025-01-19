@@ -24,6 +24,6 @@ time.sleep(sleep_time)
 
 exit_status = random.choice([0, 1])
 
-print(f"Child[{pid}]: before terminated. Parent PID {ppid}. Exit status {exit_status}.", flash = True)
+print(f"Child[{pid}]: before terminated. Parent PID {ppid}. Exit status {exit_status}.", flush = True)
 
 os._exit(exit_status)
