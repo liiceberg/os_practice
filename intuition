@@ -1,0 +1,61 @@
+#!/usr/bin/bash
+
+RED_COLOR='\e[31m'
+GREEN_COLOR='\e[32m'
+DEFAULT_COLOR='\e[0m'
+
+history=()
+turn=1
+matches=0
+error_flag=0
+
+while true
+do
+	if [[ "${error_flag}" -eq 0 ]]
+		then
+			echo "Step: ${turn}"
+	fi
+
+	read -p "Please enter number from 0 to 9 (q - quit): " user_number
+
+	case "${user_number}" in
+    	q)
+        	break
+        ;;
+    	[0-9])
+			error_flag=0
+			random_value=$((${RANDOM} % 10))
+			if [ ${user_number} -eq ${random_value} ]; 
+			then
+				matches=$((matches + 1))
+				echo "Hit! My number: ${random_value}"
+				formatted_value="${GREEN_COLOR}${random_value}${DEFAULT_COLOR}"
+			else
+				echo "Miss! My number: ${random_value}"
+				formatted_value="${RED_COLOR}${random_value}${DEFAULT_COLOR}"
+			fi
+		;;
+    	*)
+			echo -e "${RED_COLOR}Input error!${DEFAULT_COLOR}"
+			error_flag=1
+			continue
+        ;;
+	esac
+
+	history+=(${formatted_value})
+
+	success_rate=$((matches * 100 / turn))
+	failure_rate=$((100 - success_rate))
+	echo "Hit: ${success_rate}% Miss: ${failure_rate}%"
+
+	history_length=${#history[@]}
+	if [ $history_length -lt 10 ]
+		then
+			echo -e "Numbers: ${history[@]}"
+		else
+			echo -e "Numbers: ${history[@]: -10}"
+	fi
+
+	turn=$((turn + 1))
+	echo ""
+done
