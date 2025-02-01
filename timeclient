@@ -1,0 +1,21 @@
+#! /usr/bin/python3
+
+import socket
+import sys
+
+if len(sys.argv) != 3:
+    print("./timeclient <IP> <port>")
+    sys.exit(1)
+
+ip = sys.argv[1]
+port = int(sys.argv[2])    
+
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+client_socket.connect((ip, port))
+
+buffer = 1024
+data = client_socket.recv(buffer).decode('utf-8')
+print(f"Time: {data}")
+
+client_socket.close()
